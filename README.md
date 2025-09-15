@@ -1,4 +1,5 @@
 My Expenses Tracker
+
 This is a powerful and intuitive expenses tracker web application designed to give you a clear overview of your financial health. This tool helps you log your spending, categorize it, and visualize your financial data through insightful charts and graphs.
 
 Features
