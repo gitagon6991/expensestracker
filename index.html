@@ -296,7 +296,8 @@
   </div>
 
   <div class="buttons">
-    <button class="btn-save" onclick="exportToPDF()">Save PDF</button>
+    <button class="btn-save" id="save-pdf-btn">Save PDF</button>
+    <!--<button class="btn-save" onclick="exportToPDF()">Save PDF</button>-->
     <button class="btn-clear" onclick="clearData()">Clear</button>
     <button class="btn-print" onclick="window.print()">Print</button>
   </div>
@@ -816,7 +817,7 @@
   });
 
   // Change Save PDF button to open PDF modal
-  document.querySelector('.btn-save').onclick = openPDFModal;
+  //document.querySelector('.btn-save').onclick = openPDFModal;
 
   // Modified exportToPDF to accept date range
   function exportToPDF(startDate, endDate) {
@@ -877,83 +878,7 @@
     showMessage("Expense report downloaded successfully!", "success");
   }
 
-  /*function exportToPDF() {
-    // Create a formatted expense report
-    const today = new Date();
-    const reportDate = today.toLocaleDateString();
-    
-    let totalExpenses = 0;
-    expenses.forEach(exp => totalExpenses += exp.amount);
-    
-    // Calculate today's total
-    const todayString = today.getFullYear() + '-' + 
-                       String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(today.getDate()).padStart(2, '0');
-    let todayTotal = 0;
-    expenses.forEach(exp => {
-      const expDate = new Date(exp.date);
-      const expDateString = expDate.getFullYear() + '-' + 
-                           String(expDate.getMonth() + 1).padStart(2, '0') + '-' + 
-                           String(expDate.getDate()).padStart(2, '0');
-      if (expDateString === todayString) {
-        todayTotal += exp.amount;
-      }
-    });
-    
-    // Create PDF content
-    let pdfContent = `
-      <html>
-        <head>
-          <title>Expense Report - ${reportDate}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #28a745; text-align: center; }
-            .summary { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-            .expense-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
-            .expense-header { font-weight: bold; margin-bottom: 5px; }
-            .expense-details { color: #666; font-size: 14px; }
-            .total { font-size: 18px; font-weight: bold; color: #28a745; }
-          </style>
-        </head>
-        <body>
-          <h1>💰 Expense Report</h1>
-          <div class="summary">
-            <p><strong>Report Generated:</strong> ${reportDate}</p>
-            <p><strong>Today's Total:</strong> <span class="total">$${todayTotal.toFixed(2)}</span></p>
-            <p><strong>All-Time Total:</strong> <span class="total">$${totalExpenses.toFixed(2)}</span></p>
-            <p><strong>Total Expenses:</strong> ${expenses.length}</p>
-          </div>
-          <h2>Recent Expenses</h2>
-    `;
-    
-    expenses.slice(-20).reverse().forEach(exp => {
-      const expDate = new Date(exp.date);
-      pdfContent += `
-        <div class="expense-item">
-          <div class="expense-header">${exp.name} (${exp.category}) - $${exp.amount.toFixed(2)}</div>
-          <div class="expense-details">${expDate.toLocaleDateString()} ${expDate.toLocaleTimeString()} - ${exp.comment || "No comment"}</div>
-        </div>
-      `;
-    });
-    
-    pdfContent += `
-        </body>
-      </html>
-    `;
-    
-    // Create and download the PDF
-    const blob = new Blob([pdfContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `expense-report-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showMessage("Expense report downloaded successfully!", "success");
-  }*/
+
 
   function saveData() {
     localStorage.setItem("expenses", JSON.stringify(expenses));
@@ -1041,8 +966,10 @@
   // Initialize the app
   renderExpenses();
   setFilter("week");
+  document.getElementById('save-pdf-btn').onclick = openPDFModal;  // <-- Add this line!
 </script>
 
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ea5596144a9e8c',t:'MTc1Nzc5NDcxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
