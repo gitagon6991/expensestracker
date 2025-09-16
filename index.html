@@ -367,6 +367,12 @@
           <option value="Other">📦 Other</option>
         </select>
       </div>
+
+      <!-- NEW: Date/Time picker for expense date -->
+      <div class="form-group">
+        <label for="expense-date">Date & Time</label>
+        <input type="datetime-local" id="expense-date">
+      </div>
       
       <div class="form-group">
         <label for="expense-comment">Comment (Optional)</label>
@@ -381,6 +387,27 @@
   </div>
 </div>
 
+<!-- PDF Export Modal -->
+<div id="pdf-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>🗓️ Export Expenses to PDF</h3>
+    <form id="pdf-form">
+      <div class="form-group">
+        <label for="pdf-start-date">From:</label>
+        <input type="datetime-local" id="pdf-start-date">
+      </div>
+      <div class="form-group">
+        <label for="pdf-end-date">To:</label>
+        <input type="datetime-local" id="pdf-end-date">
+      </div>
+      <div class="modal-buttons">
+        <button type="button" class="btn-cancel" onclick="closePDFModal()">Cancel</button>
+        <button type="submit" class="btn-submit">Export PDF</button>
+      </div>
+    </form>
+  </div>
+</div>
+  
 <!-- Clear Confirmation Modal -->
 <div id="clear-modal" class="modal-overlay">
   <div class="modal" style="max-width: 350px;">
@@ -470,25 +497,16 @@
     return isValid;
   }
 
+   // Add/modify expense: use picked date or now
   function addExpense() {
-    if (!validateExpenseForm()) {
-      return;
-    }
-    
+    if (!validateExpenseForm()) return;
     const name = document.getElementById('expense-name').value.trim();
     const amount = parseFloat(document.getElementById('expense-amount').value);
     const category = document.getElementById('expense-category').value;
     const comment = document.getElementById('expense-comment').value.trim();
-
-    const expense = {
-      id: Date.now(),
-      name,
-      amount,
-      category,
-      comment,
-      date: new Date().toISOString()
-    };
-
+    let dateInput = document.getElementById('expense-date').value;
+    let date = dateInput ? new Date(dateInput).toISOString() : new Date().toISOString();
+    const expense = { id: Date.now(), name, amount, category, comment, date };
     expenses.push(expense);
     saveData();
     renderExpenses();
@@ -758,7 +776,108 @@
     showMessage(`Custom filter applied: ${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`, "success");
   }
 
-  function exportToPDF() {
+
+
+// PDF Modal logic
+  function openPDFModal() {
+    const modal = document.getElementById('pdf-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+      modal.querySelector('.modal').classList.add('show');
+    }, 10);
+    // Optionally set default range to today
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0,16); // 'YYYY-MM-DDTHH:MM'
+    document.getElementById('pdf-start-date').value = todayStr;
+    document.getElementById('pdf-end-date').value = todayStr;
+  }
+  function closePDFModal() {
+    const modal = document.getElementById('pdf-modal');
+    modal.querySelector('.modal').classList.remove('show');
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 300);
+  }
+
+  document.getElementById('pdf-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    const start = document.getElementById('pdf-start-date').value;
+    const end = document.getElementById('pdf-end-date').value;
+    if (!start || !end) {
+      alert('Please select both start and end dates.');
+      return;
+    }
+    if (new Date(start) > new Date(end)) {
+      alert('Start date cannot be after end date.');
+      return;
+    }
+    exportToPDF(start, end);
+    closePDFModal();
+  });
+
+  // Change Save PDF button to open PDF modal
+  document.querySelector('.btn-save').onclick = openPDFModal;
+
+  // Modified exportToPDF to accept date range
+  function exportToPDF(startDate, endDate) {
+    let filteredExpenses = expenses;
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      filteredExpenses = expenses.filter(exp => {
+        const d = new Date(exp.date);
+        return d >= start && d <= end;
+      });
+    }
+    if (filteredExpenses.length === 0) {
+      alert('No expenses found in selected range.');
+      return;
+    }
+    const reportDate = new Date().toLocaleDateString();
+    let total = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    let pdfContent = `<html><head><title>Expense Report</title>
+      <style>
+        body{font-family:Arial,sans-serif;margin:20px;}
+        h1{color:#28a745;text-align:center;}
+        .summary{background:#f8f9fa;padding:15px;border-radius:8px;margin-bottom:20px;}
+        .expense-item{border-bottom:1px solid #ddd;padding:10px 0;}
+        .expense-header{font-weight:bold;margin-bottom:5px;}
+        .expense-details{color:#666;font-size:14px;}
+        .total{font-size:18px;font-weight:bold;color:#28a745;}
+      </style></head><body>
+      <h1>💰 Expense Report</h1>
+      <div class="summary">
+        <p><strong>Report Generated:</strong> ${reportDate}</p>
+        <p><strong>Date Range:</strong> ${new Date(startDate).toLocaleString()} &rarr; ${new Date(endDate).toLocaleString()}</p>
+        <p><strong>Total:</strong> <span class="total">$${total.toFixed(2)}</span></p>
+        <p><strong>Expenses:</strong> ${filteredExpenses.length}</p>
+      </div>
+      <h2>Expenses</h2>
+    `;
+    filteredExpenses.reverse().forEach(exp => {
+      const expDate = new Date(exp.date);
+      pdfContent += `
+        <div class="expense-item">
+          <div class="expense-header">${exp.name} (${exp.category}) - $${exp.amount.toFixed(2)}</div>
+          <div class="expense-details">${expDate.toLocaleDateString()} ${expDate.toLocaleTimeString()} - ${exp.comment || "No comment"}</div>
+        </div>
+      `;
+    });
+    pdfContent += `</body></html>`;
+    const blob = new Blob([pdfContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `expense-report-${reportDate.replace(/\//g,'-')}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showMessage("Expense report downloaded successfully!", "success");
+  }
+
+  /*function exportToPDF() {
     // Create a formatted expense report
     const today = new Date();
     const reportDate = today.toLocaleDateString();
@@ -834,7 +953,7 @@
     URL.revokeObjectURL(url);
     
     showMessage("Expense report downloaded successfully!", "success");
-  }
+  }*/
 
   function saveData() {
     localStorage.setItem("expenses", JSON.stringify(expenses));
@@ -926,3 +1045,4 @@
 
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ea5596144a9e8c',t:'MTc1Nzc5NDcxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
