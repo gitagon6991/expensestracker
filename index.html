@@ -318,7 +318,9 @@
   <div class="buttons">
     <button class="btn-save" id="save-pdf-btn">Save PDF</button>
     <!--<button class="btn-save" onclick="exportToPDF()">Save PDF</button>-->
-    <button class="btn-clear" onclick="clearData()">Clear</button>
+    <button class="btn-clear" onclick="clearShowingExpenses()">Clear Showing</button>
+    <button class="btn-clear" onclick="clearData()">Clear All</button>
+    <!--<button class="btn-clear" onclick="clearData()">Clear</button>-->
     <button class="btn-print" onclick="window.print()">Print</button>
   </div>
 </div>
@@ -383,6 +385,7 @@
           <option value="Transport">🚗 Transport</option>
           <option value="Shopping">🛍️ Shopping</option>
           <option value="Entertainment">🎬 Entertainment</option>
+          <option value="Date">💖 Date</option>
           <option value="Health">🏥 Health</option>
           <option value="Bills">📄 Bills</option>
           <option value="Other">📦 Other</option>
@@ -904,6 +907,13 @@
     localStorage.setItem("expenses", JSON.stringify(expenses));
   }
 
+
+  function clearShowingExpenses() {
+  // Only clears the current visible list (does not delete data)
+  document.getElementById("expense-list").innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No expenses showing (history kept).</p>';
+  showMessage("Showing expenses cleared, but your history is safe!", "success");
+}
+  
    function clearData() {
     const modal = document.getElementById('clear-modal');
     modal.style.display = 'flex';
@@ -1001,6 +1011,7 @@ if ("serviceWorker" in navigator) {
   
 </body>
 </html>
+
 
 
 
